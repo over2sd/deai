@@ -75,7 +75,7 @@ sub pushMember {
 	my %data;
 	$::application->yield();
 	if ($termcolor) { print $thiscol; }
-	my @tags = qw( name player mini size armor shield dexmod nat deflect notff nottch miscmod speed conscore maxhp );
+	my @tags = qw( name player mini size armor shield dexmod nat deflect notff nottch miscmod speed conscore maxhp init );
 	foreach (@tags) {
 		$child = @{ $node->getChildrenByTagName($_) or [] }[0];
 		if (defined $child and $child->textContent() ne "") { print "."; $data{$_} = $child->textContent(); }

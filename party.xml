@@ -15,6 +15,7 @@
 		<speed>30</speed>
 		<conscore>16</conscore>
 		<maxhp>40</maxhp>
+		<init>3</init>
 	</member>
 	<member>
 		<name>Zortan</name>
@@ -32,6 +33,7 @@
 		<speed>30</speed>
 		<conscore>11</conscore>
 		<maxhp>20</maxhp>
+		<init>8</init>
 	</member>
 	<member>
 		<name>Kurzzt</name>
@@ -49,6 +51,7 @@
 		<speed>30</speed>
 		<conscore>15</conscore>
 		<maxhp>37</maxhp>
+		<init>3</init>
 	</member>
 	<member>
 		<name>Pergon</name>
@@ -66,5 +69,6 @@
 		<speed>20</speed>
 		<conscore>16</conscore>
 		<maxhp>32</maxhp>
+		<init>6</init>
 	</member>
 </party>

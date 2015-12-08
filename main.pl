@@ -30,6 +30,7 @@ require Sui; # DEAI Data stores
 require Common;
 require FIO;
 require deaiXML;
+require Entities;
 
 FIO::loadConf($conffilename);
 FIO::config('Debug','v',howVerbose());
@@ -50,8 +51,13 @@ my $output = $splash->insert(StatBox => name => "status");
 # load party
 my ($party,$error) = deaiXML::fromXML(FIO::config('Main','partyfn'),$output);
 (defined $party or die $error); # TODO replace die with a dialog for entering a new party member.
+my @partymembers = ();
+foreach my $p (@$party) {
+	my $m = PC->new(%$p);
+	push(@partymembers,$m);
+}
 use Data::Dumper;
-print Dumper $party;
+print Dumper @partymembers;
 # prepare tabs
 # 	encounter enitities tab
 #	encounter managing tab
