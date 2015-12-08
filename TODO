@@ -1,0 +1,5 @@
+TODO:
+
+container that keeps track of which round we're on
+container that keeps track of each entity's health, etc.
+XML I/O processor
