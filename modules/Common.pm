@@ -323,6 +323,46 @@ sub errColor {
 }
 print ".";
 
+sub listSort {
+	my ($index,@array) = @_;
+	if (@array <= 1) { return \@array,$index; } # already sorted if length 0-1
+	unless (defined $index) { $index = (); }
+	my (@la,@ra,@li,@ri);
+	my $mid = floor(@array/2) - 1;
+#	print "Trying: $mid/$#array/" . $#{$index} . "\n";
+	@la = ($mid <= $#array ? @array[0 .. $mid] : @la);
+	@ra = ($mid + 1 <= $#array ? @array[$mid + 1 .. $#array] : @ra);
+	@li = ($mid <= $#{$index} ? @$index[0 .. $mid] : @li);
+	@ri = ($mid + 1 <= $#{$index} ? @$index[$mid + 1 .. $#{$index}] : @ri);
+	my ($la,$li) = listSort(\@li,@la);
+	my ($ra,$ri) = listSort(\@ri,@ra);
+	my ($outa,$outi) = listMerge($la,$ra,$li,$ri);
+	return ($outa,$outi);
+}
+
+sub listMerge {
+	my ($left,$right,$lind,$rind) = @_;
+	my (@oa,@oi);
+	while (@$left or @$right) {
+		if (@$left and @$right) {
+			if (@$lind[0] < @$rind[0]) {
+				push(@oa,shift(@$left));
+				push(@oi,shift(@$lind));
+			} else {
+				push(@oa,shift(@$right));
+				push(@oi,shift(@$rind));
+			}
+		} elsif (@$left) {
+			push(@oa,shift(@$left));
+			if (@$lind) { push(@oi,shift(@$lind)); }
+		} elsif (@$right) {
+			push(@oa,shift(@$right));
+			if (@$rind) { push(@oi,shift(@$rind)); }
+		}
+	}
+	return \@oa,\@oi;
+}
+
 sub lineNo {
 	my $depth = shift;
 	$depth = 1 unless defined $depth;

@@ -50,6 +50,13 @@ sub passData {
 }
 print ".";
 
+sub storeData {
+	my ($key,$value) = @_;
+	defined $key and $defined $value or return undef;
+	return $data{$key} = $value;
+}
+print ".";
+
 # Status hashes
 sub getStatHash { my $typ = shift; return (wat=>($typ eq 'man' ? "Read" : "Watch") . "ing",onh=>"On-hold",ptw=>"Plan to " . ($typ eq 'man' ? "Read" : "Watch"),com=>"Completed",drp=>"Dropped"); } # could be given i18n
 sub getStatOrder { return qw( wat onh ptw com drp ); }
