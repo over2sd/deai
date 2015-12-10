@@ -58,9 +58,12 @@ print ".";
 
 sub saveConf {
 	my $debug = $cfg->val('Debug','v',undef); # store the value of debug verbosity level
+	my $flex = $cfg->val('DB','FlexSQLisloaded',undef); # and DB module
 	$cfg->setval('Debug','v',undef); # don't output the command-line option for verbosity
+	$cfg->setval('DB','FlexSQLisloaded',undef); # don't output option saying we've loaded FlexSQL module
 	$cfg->RewriteConfig();
 	$cfg->setval('Debug','v',$debug); # put the option back, in case program is still running
+	$cfg->setval('DB','FlexSQLisloaded',$flex); # this one, too
 	$cfgread = 1; # If we're writing, I'll assume we have some values to use
 }
 print ".";

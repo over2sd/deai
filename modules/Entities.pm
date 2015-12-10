@@ -83,6 +83,23 @@ sub decrease {
 	return $self->{$key};
 }
 
+sub activate {
+	my ($self,$display) = @_;
+	# insert display row with buttons into display
+	# onClick of act button, add self to end of display's queue, destroy display row, ask display to read next item in queue
+	# onClick of wait button, disable wait button, ask display to read next item in queue, and destroy wait button
+}
+
+sub makeRow {
+	my ($self,$display,$color) = @_;
+	my $row = $display->insert(HBox => name => $self->{name}, pack => { fill => 'x', expand => 0}, backColor => ColorRow::stringToColor($color or "#9cc"));
+	$row->insert( Widget => width => 7, height => 30, backColor => ColorRow::stringToColor($color or "#9cc") );
+	$row->insert( Label => text => "$self->{name}:", pack => {fill => 'x', expand => 1} );
+	$row->insert( Label => text => "Initiative: ");
+	$row->insert( InputLine => text => ($self->{priority} == 99 ? "" : $self->{priority}), onChange => sub { $self->{priority} = int($_[0]->text); });
+}
+print ".";
+
 package Mob; # monsters, hostile NPCs, etc.
 use vars qw(@ISA);
 @ISA = qw(PC);
@@ -93,11 +110,31 @@ sub new {
 	foreach (qw( pp gp sp cp sr cr )) {
 		$self->{$_} = ($profile{$_} or 0);
 	}
- 	foreach (qw( loot5 loot10 loot15 loot20 loot25 dr race type )) {
+ 	foreach (qw( loot0 loot5 loot10 loot15 loot20 loot25 dr race type )) {
 		$self->{$_} = ($profile{$_} or "");
 	}
 	bless $self,$class;
 	return $self;
+}
+
+print ".";
+
+package TurnMarker;
+
+sub new {
+	my ($class,$parent,%profile) = @_;
+	die "No parent given to turn marker!" unless (defined $parent);
+	my $self = {
+		%profile,
+		parent => $parent,
+	};
+	bless $self,$class;
+	return $self;
+}
+
+sub activate {
+	# increment round number in parent
+	# add new round marker to end of parent's queue
 }
 
 print ".";

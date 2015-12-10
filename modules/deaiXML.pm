@@ -64,7 +64,7 @@ print "...$_";
 	}
 print "...B!\n";
 	$|--;
-	$output->push("Successfully imported $storecount titles...");
+	$output->push("Successfully imported $storecount members...");
 	return $list;
 }
 print ".";

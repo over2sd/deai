@@ -1075,7 +1075,17 @@ sub insert_to_page {
 	return $child;
 }
 
-
+sub panel { # returns a handle for panel #n. Useful for setting backgrounds, etc.
+	my ($self,$key) = @_;
+	my $index = ${ $self->{order} }{$key} or -1;
+	$index = $key if ($index < 0 and $key + 1 eq 1 + $key);
+	if ($index < 0) {
+		print "[E] Panel $key not found.\n";
+		return -1;
+	}
+	return $self->{pages}[$index] if defined $self->{pages}[$index];
+	return undef; # otherwise
+}
 
 package PGK;
 
@@ -1225,7 +1235,7 @@ sub createMainWin {
 	);
 	my ($t,$l) = ((FIO::config('Main','top') or 30),(FIO::config('Main','left') or 40));
 	$window->place( x => $l, rely => 1, y=> -$t, anchor => "nw");
-	$window->onClose( sub { FlexSQL::closeDB(); my $err = PGK::savePos($window) if (FIO::config('Main','savepos')); Common::errorOut('PGK::savePos',$err) if $err; exit(0); } );
+	$window->onClose( sub { FlexSQL::closeDB() if (FIO::config('DB','FlexSQLisloaded') == 1); my $err = PGK::savePos($window) if (FIO::config('Main','savepos')); Common::errorOut('PGK::savePos',$err) if $err; exit(0); } );
 	#pack it all into the hash for main program use
 	$windowset{mainWin} = $window;
 	$window->set( menuItems => PGUI::buildMenus(\%windowset));
@@ -1332,7 +1342,7 @@ This function refreshes the user interface. I think.
 sub refreshUI {
 	my ($gui,$dbh) = @_;
 	$gui = getGUI() unless (defined $$gui{status});
-	$dbh = FlexSQL::getDB() unless (defined $dbh);
+	$dbh = (FIO::config('DB','FlexSQLisloaded') ? FlexSQL::getDB() : undef) unless (defined $dbh);
 	print "Refreshing UI...\n";
 	PGUI::populateMainWin($dbh,$gui,1);
 }
@@ -1408,6 +1418,7 @@ Returns 0 on success.
 
 =cut
 sub startwithDB {
+	(FIO::config('DB','FlexSQLisloaded') or die "startwithDB called when config indicates database module hasn't been loaded!\n");
 	my ($gui,$program,$recursion) = @_;
 	$recursion = 0 unless defined $recursion;
 	die "Infinite loop" if $recursion > 10;
@@ -1492,6 +1503,7 @@ Returns database HANDLE,0 on success.
 
 =cut
 sub loadDB {
+	(FIO::config('DB','FlexSQLisloaded') or die "loadDB called when config indicates database module hasn't been loaded!\n");
 	my ($base,$host,$passwd,$uname,$text,$widget) = @_;
 	$text->push("Connecting to database...");
 	my ($dbh,$error,$errstr) = FlexSQL::getDB($base,$host,Sui::passData('dbname'),$passwd,$uname);

@@ -105,7 +105,6 @@ sub buildMenus { #Replaces Gtk2::Menu, Gtk2::MenuBar, Gtk2::MenuItem
 			[],
 			['Close', 'Ctrl-W', km::Ctrl | ord('W'), sub { $$gui{mainWin}->close() } ],
 		]],
-		]],
 		[ '~Help' => [
 			['~About',sub { message('About!') }], #\&aboutBox],
 		]],

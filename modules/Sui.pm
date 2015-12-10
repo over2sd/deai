@@ -52,7 +52,7 @@ print ".";
 
 sub storeData {
 	my ($key,$value) = @_;
-	defined $key and $defined $value or return undef;
+	defined $key and defined $value or return undef;
 	return $data{$key} = $value;
 }
 print ".";
@@ -121,7 +121,7 @@ sub getOpts {
 		'870' => ['l',"Custom Text",'Custom'],
 		'872' => ['t',"Anime:",'ani'],
 		'873' => ['t',"Manga:",'man'],
-		'871' => ['t',"POMAL:",'program'],
+		'871' => ['t',"DEAI:",'program'],
 ##		'874' => ['t',"Movies:",'mov'],
 ##		'875' => ['t',"Stand-alone Manga:",'sam'],
 		'876' => ['t',"Options dialog",'options'],
@@ -163,11 +163,7 @@ sub getDefaults {
 	return (
 		['Main','partyfn','party.xml'],
 		['Main','highinitfirst',1],
-		['Main','autoscore',1],
 		['Font','bigent',"Verdana 24"],
-		['UI','statustabs',1],
-		['UI','rulecolor',"#003"],
-		['DB','likefilter',"qr/(\w+)/"],
 	);
 }
 print ".";
