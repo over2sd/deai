@@ -324,6 +324,7 @@ sub errColor {
 print ".";
 
 sub listSort {
+	use POSIX qw( floor );
 	my ($index,@array) = @_;
 	if (@array <= 1) { return \@array,$index; } # already sorted if length 0-1
 	unless (defined $index) { $index = (); }

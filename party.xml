@@ -1,4 +1,4 @@
-<party>
+<group>
 	<member>
 		<name>Thump</name>
 		<player>Nick</player>
@@ -69,6 +69,6 @@
 		<speed>20</speed>
 		<conscore>16</conscore>
 		<maxhp>32</maxhp>
-		<init>6</init>
+		<init>2</init>
 	</member>
-</party>
+</group>

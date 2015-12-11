@@ -52,6 +52,7 @@ sub startEncounter {
 	defined $box or $box = $self->{box};
 	my $party = Sui::passData('party');
 	my $mobs = Sui::passData('enemies');
+	$box->insert(Label => text => "Current actor:", pack => {fill => 'x'});
 	unless (defined $party) {
 		$box->insert(Label => text => "No party found. The forces of darkness prevail. Add party members to start an encounter.");
 		my $button = $box->insert(SpeedButton => text => "Begin Encounter");
@@ -65,29 +66,45 @@ sub startEncounter {
 		return;
 	}
 	my %inits;
-	my @priority;
-	foreach my $m (@$party) {
+#	my @priority;
+	foreach my $m (@$party,@$mobs) {
 		my $key = sprintf("%03d",$m->get('priority'));
 		defined $inits{$key} or $inits{$key} = [];
 		push(@{ $inits{$key} },$m);
 	}
-	foreach my $m (@$mobs) {
-		my $key = sprintf("%03d",$m->get('priority'));
-		defined $inits{$key} or $inits{$key} = [];
-		push(@{ $inits{$key} },$m);
-	}
-	foreach my $k (reverse keys %inits) {
-		my @list = @{ $inits{$key} };
+	foreach my $k (reverse sort keys %inits) {
+		my $list = $inits{$k};
 		my @imods;
-		foreach (@list) {
+		foreach (@$list) {
 			push(@imod,$_->get('init'));
 		}
-		my ($elist,$ilist) = Common::listSort(\@imods,@list);
-		push(@priority,@$elist);
-		push(@{ $self->{priority} },@$elist);
+		my ($elist,$ilist) = Common::listSort(\@imods,@$list);
+#		push(@priority,reverse @$elist);
+		push(@{ $self->{priority} },reverse @$elist);
 	}
-use Data::Dumper;
-print Dumper @priority;
+#print "\nContains:\n";
+#foreach (@priority) {
+#	printf("%s: %d/%d\n",$_->get('name'),$_->get('priority'),$_->get('init'));
+#}
+	my $rounds = TurnMarker->new($self);
+	$self->enqueue($rounds); # add the end-of-turn marker
+	$self->advance();
+}
+
+sub advance {
+	my ($self) = @_;
+	my $x = shift @{ $self->{priority} };
+	$x->activate($self);
+}
+
+sub enqueue {
+	my ($self,$object) = @_;
+	push(@{ $self->{priority} },$object);
+}
+
+sub incRound {
+	my $self = shift;
+	$self->{round}++;
 }
 
 package PGUI;
@@ -136,6 +153,29 @@ No return value.
 sub devHelp {
 	my ($target,$task) = @_;
 	sayBox($target,"$task is on the developer's TODO list.\nIf you'd like to help, check out the project's GitHub repo at http://github.com/over2sd/pomal.");
+}
+print ".";
+
+sub openEncounter {
+	my ($box,$encfn) = @_;
+	my @olist;
+	my $odir = (FIO::config('Main','oppdir') or "./encounters");
+	my $tmp = $box->insert(StatBox => name => 'temp');
+	my ($group,$error) = deaiXML::fromXML("$odir/$encfn",$tmp);
+	(defined $group or print $error);
+	my @members = ();
+	foreach my $d (@$group) {
+		my $m = Mob->new(%$d);
+		push(@members,$m);
+	}
+	Sui::storeData('enemies',\@members);
+	$tmp->destroy();
+	my $i = 0;
+	foreach (@members) {
+		my $color = Common::getColors(($i++ % 2 ? 0 : 14),1);
+		$_->makeRow($box,$color);
+	}
+
 }
 print ".";
 

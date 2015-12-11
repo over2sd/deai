@@ -86,8 +86,24 @@ sub decrease {
 sub activate {
 	my ($self,$display) = @_;
 	# insert display row with buttons into display
-	# onClick of act button, add self to end of display's queue, destroy display row, ask display to read next item in queue
-	# onClick of wait button, disable wait button, ask display to read next item in queue, and destroy wait button
+	my $row = $display->insert( HBox => name => $self->get('name'), pack => {fill => 'x'});
+	$row->insert( Label => text => $self->get('name'));
+	my $act = $row->insert( SpeedButton => text => "Act");
+	$act->onClick(sub {
+		$display->enqueue($self);
+		$row->destroy();
+		$display->advance();
+	});
+	my $wait = $row->insert( SpeedButton => text => "Delay");
+	$wait->onClick( sub {
+		$wait->enabled(0);
+		$display->advance();
+		$act->onClick(sub {
+			$display->enqueue($self);
+			$row->destroy();
+		});
+		$wait->destroy();
+	});
 }
 
 sub makeRow {
@@ -133,8 +149,13 @@ sub new {
 }
 
 sub activate {
+	my ($self,$display) = @_;
+	(defined $display or $display = $self->{parent});
 	# increment round number in parent
+	$display->incRound();
 	# add new round marker to end of parent's queue
+	$display->enqueue($self);
+	$display->advance();
 }
 
 print ".";

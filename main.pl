@@ -64,7 +64,7 @@ my @tabs = qw( Party Opponents Time ); # TODO: generate dynamically
 my $pager = $win->insert( Pager => name => 'Pages', pack => { fill => 'both', expand => 1}, );
 $pager->build(@tabs);
 my $i = 1;
-my $color = Common::getColors($i++,1);
+my $color = Common::getColors(17,1);
 #	party tab
 my $partypage = $pager->insert_to_page(0,VBox =>
 		backColor => ColorRow::stringToColor($color),
@@ -76,12 +76,23 @@ foreach (@partymembers) {
 	$color = Common::getColors(($i++ % 2 ? 0 : 14),1);
 	$_->makeRow($partypage,$color);
 }
-my $color = Common::getColors($i++,1);
+$color = Common::getColors($i++,1);
 # 	encounter enitities tab
 my $opponentpage = $pager->insert_to_page(1,VBox =>
 		backColor => ColorRow::stringToColor($color),
 		pack => { fill => 'both', },
 	);
+my $filebox = $opponentpage->insert( VBox => name => 'filechoices' );
+my $odir = (FIO::config('Main','oppdir') or "./encounters");
+opendir(DIR,$odir) or die $!;
+my @files = grep {
+		/\.xml$/
+		&& -f "$odir/$_"
+	} readdir(DIR);
+closedir(DIR);
+foreach my $f (@files) {
+	$filebox->insert( Button => text => $f, onClick => sub { PGUI::openEncounter($opponentpage,$f); $filebox->destroy(); });
+}
 $opponentpage->insert( SpeedButton => text => "Add Opponent", pack => {fill => 'none', expand => 0} );
 #	encounter managing tab
 $color = Common::getColors($i++,1);
