@@ -21,13 +21,17 @@ package initBox;
 
 sub new {
 	my ($class,%profile) = @_;
-	unless (defined $profile{box}) {
-		die "An initBox must be given a VBox or HBox parameter, e.g., box => \$parent->insert(VBox => name => 'boxy')";
+	unless (defined $profile{tbox}) {
+		die "An initBox must be given a VBox or HBox timebox parameter, e.g., tbox => \$parent->insert(VBox => name => 'boxy')";
+	}
+	unless (defined $profile{sbox}) {
+		die "An initBox must be given a VBox or HBox statusbox parameter, e.g., sbox => \$parent->insert(VBox => name => 'boxy')";
 	}
 	my $self = {
-		box => $profile{box},
+		box => $profile{tbox},
 		round => ($profile{round} or 0),
 		priority => [],
+		slist => $profile{sbox},
 	};
 	bless $self,$class;
 	$self->build($self->{box});
@@ -41,30 +45,33 @@ sub insert {
 }
 
 sub build {
-	my ($self,$box) = @_;
+	my ($self,$box,$stat) = @_;
 	defined $box or $box = $self->{box};
+	defined $stat or $stat = $self->{slist};
 	my $button = $box->insert(SpeedButton => text => "Begin Encounter");
 	$button->onClick(sub { $button->destroy(); $self->startEncounter($box);});
+	$stat->insert( Label => text => "Status:" );
+	$stat->{rows} = $stat->insert( VBox => name => 'rowcontainer', pack => { fill => 'both', expand => 1});
 }
 
 sub startEncounter {
-	my ($self,$box) = @_;
+	my ($self,$box,$stat) = @_;
 	defined $box or $box = $self->{box};
 	my $party = Sui::passData('party');
 	my $mobs = Sui::passData('enemies');
-	$box->insert(Label => text => "Current actor:", pack => {fill => 'x'});
 	unless (defined $party) {
-		$box->insert(Label => text => "No party found. The forces of darkness prevail. Add party members to start an encounter.");
+		my $warn = $box->insert(Label => text => "No party found.\nThe forces of darkness prevail.\nAdd party members to start an encounter.", autoHeight => 1);
 		my $button = $box->insert(SpeedButton => text => "Begin Encounter");
-		$button->onClick(sub { $button->destroy(); $self->startEncounter($box);});
+		$button->onClick(sub { $warn->destroy(); $button->destroy(); $self->startEncounter($box);});
 		return;
 	}
 	unless (defined $mobs) {
-		$box->insert(Label => text => "No enemies found. Party unchallenged. Add enemies to begin an encounter.");
+		my $warn = $box->insert(Label => text => "No enemies found.\nParty unchallenged.\nAdd enemies to begin an encounter.", autoHeight => 1);
 		my $button = $box->insert(SpeedButton => text => "Begin Encounter");
-		$button->onClick(sub { $button->destroy(); $self->startEncounter($box);});
+		$button->onClick(sub { $warn->destroy(); $button->destroy(); $self->startEncounter($box);});
 		return;
 	}
+	$box->insert(Label => text => "Current actor:", pack => {fill => 'x'});
 	my %inits;
 #	my @priority;
 	foreach my $m (@$party,@$mobs) {
@@ -88,23 +95,40 @@ sub startEncounter {
 #}
 	my $rounds = TurnMarker->new($self);
 	$self->enqueue($rounds); # add the end-of-turn marker
+	defined $stat or $stat = $self->{slist};
+	my $inames = [];
+	foreach my $m (@$party,@$mobs) {
+		push(@{ $inames },$m->get('name'));
+	}
+	my ($elist,$ilist) = Common::listSort(\@inames,@$party,@$mobs);
+	my $rows = $stat->{rows};
+	foreach my $m (@$elist) {
+		$color = Common::getColors(($i++ % 2 ? 0 : 14),1);
+		$m->makeStatusRow($rows,$color);
+	}
 	$self->advance();
 }
 
 sub advance {
 	my ($self) = @_;
-	my $x = shift @{ $self->{priority} };
+	my $x = shift @{ $self->{priority} } or return -1;
 	$x->activate($self);
+	return 0;
 }
 
 sub enqueue {
 	my ($self,$object) = @_;
+	(defined $object or return -1);
 	push(@{ $self->{priority} },$object);
+	return 0;
 }
 
 sub incRound {
 	my $self = shift;
 	$self->{round}++;
+	my $sl = $self->{slist};
+	# update slist's round label
+	# run through slist's rows of entities, checking for expiration of effects
 }
 
 package PGUI;

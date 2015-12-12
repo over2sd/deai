@@ -110,9 +110,60 @@ sub makeRow {
 	my ($self,$display,$color) = @_;
 	my $row = $display->insert(HBox => name => $self->{name}, pack => { fill => 'x', expand => 0}, backColor => ColorRow::stringToColor($color or "#9cc"));
 	$row->insert( Widget => width => 7, height => 30, backColor => ColorRow::stringToColor($color or "#9cc") );
-	$row->insert( Label => text => "$self->{name}:", pack => {fill => 'x', expand => 1} );
+	my $name = Common::shorten($self->{name},(FIO::config('UI','namelimit') or 20),4);
+	$row->insert( Label => text => "$name:", pack => {fill => 'x', expand => 1} );
 	$row->insert( Label => text => "Initiative: ");
 	$row->insert( InputLine => text => ($self->{priority} == 99 ? "" : $self->{priority}), onChange => sub { $self->{priority} = int($_[0]->text); });
+	$self->{curhp} = $self->{maxhp}; # for use in encounters
+}
+
+sub makeStatusRow {
+	my ($self,$target,$color) = @_;
+	my $name = Common::shorten($self->{name},(FIO::config('UI','namelimit') or 20),4);
+	my $row = $target->insert( HBox => name => 'row', backColor => ColorRow::stringToColor($color or "#99f"), pack => {fill => 'x', expand => 0} );
+	$row->insert( Label => text => "$name: ");
+	$row->insert( SpeedButton => text => sprintf(" %d/%d ",$self->{curhp},$self->{maxhp}),
+		onClick => sub { print "HP clicked";},
+	);
+	$row->insert( Label => text => "  AC: " . $self->ac('full') . " ");
+	return $row;
+}
+
+sub ac {
+	my ($self,$which) = @_;
+	my $ac = (FIO::config('Main','baseAC') or 10);
+	for ($which) {
+		if (/full/) {
+			return sprintf("%s/%s/%s",$self->ac('n'),$self->ac('f'),$self->ac('t'));
+		} elsif (/f/) {
+			$ac += $self->{size};
+			$ac += $self->{armor};
+			$ac += $self->{shield};
+			$ac += $self->{nat};
+			$ac += $self->{deflect};
+			$ac += $self->{nottch};
+			$ac += $self->{miscmod};
+			return $ac;
+		} elsif (/t/) {
+			$ac += $self->{size};
+			$ac += $self->{dexmod};
+			$ac += $self->{deflect};
+			$ac += $self->{notff};
+			$ac += $self->{miscmod};
+			return $ac;
+		} else {
+			$ac += $self->{size};
+			$ac += $self->{armor};
+			$ac += $self->{shield};
+			$ac += $self->{dexmod};
+			$ac += $self->{nat};
+			$ac += $self->{deflect};
+			$ac += $self->{notff};
+			$ac += $self->{nottch};
+			$ac += $self->{miscmod};
+			return $ac;
+		}
+	}
 }
 print ".";
 

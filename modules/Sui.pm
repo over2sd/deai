@@ -84,24 +84,14 @@ sub getOpts {
 		'006' => ['c',"Tiebreaking: High initiative goes first",'highinitfirst'],
 
 		'030' => ['l',"User Interface",'UI'],
-##		'031' => ['c',"Shown episode is next unseen (not last seen)",'shownext'],
-		'032' => ['c',"Notebook with tab for each status",'statustabs'],
-##		'033' => ['c',"Put movies on a separate tab",'moviesapart'],
-		'034' => ['s',"Notebook tab position: ",'tabson',0,"top","bottom"],
-##		'035' => ['c',"Show suggestions tab",'suggtab'],
-		'036' => ['c',"Show recent activity tab",'recenttab'],
-		'038' => ['c',"Show progress bar for each title's progress",'graphicprogress'],
+		'031' => ['c',"Delay skips if no action before next turn",'waittoskip'],
+		'032' => ['n',"Shorten names to this length",'namelimit',20,15,100,1,10],
 		'039' => ['x',"Header background color code: ",'headerbg',"#CCCCFF"],
 		'03a' => ['c',"Show count in section tables",'linenos'],
-		'03b' => ['c',"Refresh pages when title is moved",'moveredraw'],
-##		'03c' => ['c',"Move to active when changing parts seen",'incmove'],
 		'03d' => ['x',"Background for list tables",'listbg',"#EEF"],
 		'043' => ['x',"Background for letter buttons",'letterbg',"#CFC"],
-		'03e' => ['n',"Shorten titles to this length",'titlelimit',30,15,300,1,10],
-		'03f' => ['c',"Title score with a knob instead of a slider",'knobscore'],
 		'040' => ['c',"Show a horizontal rule between rows",'rulesep'],
 		'041' => ['x',"Rule color: ",'rulecolor',"#003"],
-		'042' => ['c',"Load title tables as needed, not all at startup",'jitload'],
 
 		'050' => ['l',"Recent",'Recent'],
 		'051' => ['c',"Recent tab is active on startup",'activerecent'],
@@ -163,6 +153,8 @@ sub getDefaults {
 	return (
 		['Main','partyfn','party.xml'],
 		['Main','highinitfirst',1],
+		['Main','savepos',1],
+		['UI','notabs',1],
 		['Font','bigent',"Verdana 24"],
 	);
 }

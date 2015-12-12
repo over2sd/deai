@@ -197,7 +197,7 @@ sub saveFromOpt {
 	$window->destroy();
 	# TODO: check here to see if something potentially crash-inducing has been changed, and shut down cleanly, instead, after informing user that a restart is required.
 	formatTooltips(); # set tooltip format, in case it was changed.
-	PGK::refreshUI(PGK::getGUI(),FlexSQL::getDB()); # refresh the UI
+	PGK::refreshUI(PGK::getGUI(),(FIO::config('DB','FlexSQLisloaded') == 1 ? FlexSQL::getDB() : undef)); # refresh the UI
 }
 print ".";
 

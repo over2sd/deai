@@ -5,7 +5,7 @@ use warnings;
 use utf8;
 
 # deai
-my $version = "0.01a";
+my $version = "0.02a";
 
 
 my $count = shift || 1;
@@ -100,24 +100,11 @@ my $timepage = $pager->insert_to_page(2,VBox =>
 		backColor => ColorRow::stringToColor($color),
 		pack => { fill => 'both', },
 	);
-#my $startbut = $timepage->insert( SpeedButton => text => "Start Encounter", pack => { fill => 'none', expand => 0} );
-my $hb = $timepage->insert( HBox => name => 'timesplit' );
-my $initiative = initBox->new( round => 0, box => $hb->insert( VBox => name => 'ib', pack => {fill => 'both', expand => 1} ));
-#$startbut->onClick( sub {
-#	foreach (@partymembers) {
-#		print "$_->{name}: $_->{priority}\n";
-#	}
-#	$initiative->startEncounter($hb);
-#	$startbut->destroy();
-#});
-my $statuses = $hb->insert( VBox => name => "status", pack => {fill => 'both', expand => 1});
-$statuses->insert( Label => text => "Status:" );
+my $hb = $timepage->insert( HBox => name => 'timesplit', pack => {fill => 'both', expand => 1} );
+my $initiative = initBox->new( round => 0, tbox => $hb->insert( VBox => name => 'ib', pack => {fill => 'both', expand => 1} ), sbox => $hb->insert( VBox => name => "status", pack => {fill => 'both', expand => 1}));
 # display windows
 
 
 my $text = $$gui{status};
 $text->push("Ready.");
 Prima->run();
-
-use Data::Dumper;
-print Dumper @partymembers;

@@ -3,3 +3,6 @@ TODO:
 container that keeps track of which round we're on
 container that keeps track of each entity's health, etc.
 XML I/O processor
+delay button adds Waiting text label
+Option: delay button enqueues a resetter that deletes the waiting row and activates the entity again when its turn comes back around (UI,waittoskip)
+Option: flat-footed until attack?

@@ -1235,7 +1235,12 @@ sub createMainWin {
 	);
 	my ($t,$l) = ((FIO::config('Main','top') or 30),(FIO::config('Main','left') or 40));
 	$window->place( x => $l, rely => 1, y=> -$t, anchor => "nw");
-	$window->onClose( sub { FlexSQL::closeDB() if (FIO::config('DB','FlexSQLisloaded') == 1); my $err = PGK::savePos($window) if (FIO::config('Main','savepos')); Common::errorOut('PGK::savePos',$err) if $err; exit(0); } );
+	$window->onClose( sub {
+		FlexSQL::closeDB() if (FIO::config('DB','FlexSQLisloaded') == 1);
+		my $err = PGK::savePos($window) if (FIO::config('Main','savepos'));
+		Common::errorOut('PGK::savePos',$err) if $err;
+		exit(0);
+	} );
 	#pack it all into the hash for main program use
 	$windowset{mainWin} = $window;
 	$window->set( menuItems => PGUI::buildMenus(\%windowset));
