@@ -97,11 +97,14 @@ sub activate {
 	my $wait = $row->insert( SpeedButton => text => "Delay");
 	$wait->onClick( sub {
 		$wait->enabled(0);
-		$display->advance();
+		my $skip = Skipper->new($display,$row,$self);
+		FIO::config('UI','waittoskip') && $display->enqueue($skip);
 		$act->onClick(sub {
 			$display->enqueue($self);
+			FIO::config('UI','waittoskip') && $skip->disable();
 			$row->destroy();
 		});
+		$display->advance();
 		$wait->destroy();
 	});
 }
@@ -121,7 +124,7 @@ sub makeStatusRow {
 	my ($self,$target,$color) = @_;
 	my $name = Common::shorten($self->{name},(FIO::config('UI','namelimit') or 20),4);
 	my $row = $target->insert( HBox => name => 'row', backColor => ColorRow::stringToColor($color or "#99f"), pack => {fill => 'x', expand => 0} );
-	$row->insert( Label => text => "$name: ");
+	$row->insert( Label => text => " $name: ");
 	$row->insert( SpeedButton => text => sprintf(" %d/%d ",$self->{curhp},$self->{maxhp}),
 		onClick => sub { print "HP clicked";},
 	);
@@ -207,6 +210,39 @@ sub activate {
 	# add new round marker to end of parent's queue
 	$display->enqueue($self);
 	$display->advance();
+}
+
+print ".";
+
+package Skipper;
+
+sub new {
+	my ($class,$parent,$box,$char,%profile) = @_;
+	die "No parent given to turn marker!" unless (defined $parent);
+	my $self = {
+		%profile,
+		parent => $parent,
+		waiter => $box,
+		char => $char,
+		enabled => 1,
+	};
+	bless $self,$class;
+	return $self;
+}
+
+sub activate {
+	my ($self,$display) = @_;
+	(defined $display or $display = $self->{parent});
+	if ($self->{enabled}) {
+		$self->{waiter}->destroy();
+		$self->{char}->activate($display);
+	} else {
+		$display->advance();
+	}
+}
+
+sub disable {
+	$_[0]->{enabled} = 0;
 }
 
 print ".";

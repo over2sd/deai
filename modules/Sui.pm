@@ -155,6 +155,7 @@ sub getDefaults {
 		['Main','highinitfirst',1],
 		['Main','savepos',1],
 		['UI','notabs',1],
+		['UI','waittoskip',1],
 		['Font','bigent',"Verdana 24"],
 	);
 }
