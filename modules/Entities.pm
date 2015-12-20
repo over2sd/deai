@@ -105,6 +105,7 @@ sub activate {
 			$row->destroy();
 		});
 		$display->advance();
+		$row->insert( Label => text => " Delayed ");
 		$wait->destroy();
 	});
 }
@@ -121,13 +122,26 @@ sub makeRow {
 }
 
 sub makeStatusRow {
-	my ($self,$target,$color) = @_;
+	my ($self,$target,$dtarget,$color) = @_;
 	my $name = Common::shorten($self->{name},(FIO::config('UI','namelimit') or 20),4);
 	my $row = $target->insert( HBox => name => 'row', backColor => ColorRow::stringToColor($color or "#99f"), pack => {fill => 'x', expand => 0} );
 	$row->insert( Label => text => " $name: ");
-	$row->insert( SpeedButton => text => sprintf(" %d/%d ",$self->{curhp},$self->{maxhp}),
-		onClick => sub { print "HP clicked";},
-	);
+	my $hbutton = $row->insert( SpeedButton => text => sprintf(" %d/%d ",$self->{curhp},$self->{maxhp}),	);
+	$hbutton->onClick(sub {
+		my $asker = PGK::labelBox( $dtarget,sprintf(" %s: ",$self->{name}),'HPask','h', boxex => 0, labex => 0);
+		my $newval = $asker->insert( SpinEdit =>
+			value => $self->{curhp},
+			min => (-$self->{conscore} or 0),
+			max => ($self->{maxhp} or 9999),
+			step => 1, pageStep => 5, );
+		my $adder = $asker->insert( SpinEdit => value => 0,
+			min => -9999,
+			max => 9999,
+			step => 1, pageStep => 5, onChange => sub { $newval->value($self->{curhp} + $_[0]->value);});
+		$asker->insert( SpeedButton => text => "-10", onClick => sub { $adder->value($adder->value - 10); });
+		$asker->insert( SpeedButton => text => "+10", onClick => sub { $adder->value($adder->value + 10); });
+		my $killer = $asker->insert( SpeedButton => text => "Apply", onClick => sub { $self->{curhp} = $newval->value; $hbutton->text(sprintf(" %d/%d ",$self->{curhp},$self->{maxhp})); $asker->destroy(); });
+	});
 	$row->insert( Label => text => "  AC: " . $self->ac('full') . " ");
 	return $row;
 }

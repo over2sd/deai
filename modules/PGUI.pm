@@ -106,7 +106,7 @@ sub startEncounter {
 	my $rows = $stat->{rows};
 	foreach my $m (@$elist) {
 		$color = Common::getColors(($i++ % 2 ? 0 : 14),1);
-		$m->makeStatusRow($rows,$color);
+		$m->makeStatusRow($rows,$self,$color);
 	}
 	$self->incRound();
 	$self->advance();

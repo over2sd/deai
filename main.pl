@@ -5,7 +5,7 @@ use warnings;
 use utf8;
 
 # deai
-my $version = "0.02a";
+my $version = "0.021a";
 
 
 my $count = shift || 1;

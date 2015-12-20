@@ -1,7 +1,13 @@
 TODO:
 
-container that keeps track of which round we're on
 container that keeps track of each entity's health, etc.
 XML I/O processor
-delay button adds Waiting text label
 Option: flat-footed until attack?
+Option: tHP allowed?
+Option: HP minimum 0, -10, or -conscore?
+Option: Damage asker horiz/vert?
+Save opponents button
+Save party button
+Make Party pane load from array for refreshing purposes
+Clear opponents button
+Option: alternate dialog location for status askers
