@@ -32,6 +32,7 @@ sub new {
 		round => ($profile{round} or 0),
 		priority => [],
 		slist => $profile{sbox},
+		rlabel => undef,
 	};
 	bless $self,$class;
 	$self->build($self->{box});
@@ -51,6 +52,7 @@ sub build {
 	my $button = $box->insert(SpeedButton => text => "Begin Encounter");
 	$button->onClick(sub { $button->destroy(); $self->startEncounter($box);});
 	$stat->insert( Label => text => "Status:" );
+	$self->{rlabel} = $stat->insert( Label => text => "Round $self->{round}");
 	$stat->{rows} = $stat->insert( VBox => name => 'rowcontainer', pack => { fill => 'both', expand => 1});
 }
 
@@ -106,6 +108,7 @@ sub startEncounter {
 		$color = Common::getColors(($i++ % 2 ? 0 : 14),1);
 		$m->makeStatusRow($rows,$color);
 	}
+	$self->incRound();
 	$self->advance();
 }
 
@@ -128,6 +131,8 @@ sub incRound {
 	$self->{round}++;
 	my $sl = $self->{slist};
 	# update slist's round label
+	my $rl = 	$self->{rlabel};
+	$rl->text(sprintf("Round %d",$self->{round}));
 	# run through slist's rows of entities, checking for expiration of effects
 }
 
