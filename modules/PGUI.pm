@@ -208,6 +208,62 @@ sub openEncounter {
 }
 print ".";
 
+sub addMember {
+	my ($caller,$memtyp,$target,$color) = @_;
+	return unless ($memtyp eq 'party' or $memtyp eq 'enemies');
+	$caller->enabled(0);
+	my $members = (Sui::passData($memtyp) or []);
+	my $topper = $target->insert( Label => text => "Enter member details:" );
+	my $row1 = $target->insert( HBox => name => 'addmember1' );
+	my $m = PC->new();
+	$row1->insert( Label => text => "AC:");
+	my $size = PGK::labelBox($row1,'Size','acz','v',boxex => 0, labex => 0);
+	$size->insert( SpinEdit => value => 0, onChange => sub { $m->{size} = $_[0]->text; });
+	my $armor = PGK::labelBox($row1,'Armor','aca','v',boxex => 0, labex => 0);
+	$armor->insert( SpinEdit => value => 0, onChange => sub { $m->{armor} = $_[0]->text; });
+	my $shield = PGK::labelBox($row1,'Shield','acs','v',boxex => 0, labex => 0);
+	$shield->insert( SpinEdit => value => 0, onChange => sub { $m->{shield} = $_[0]->text; });
+	my $dex = PGK::labelBox($row1,'Dex mod','acd','v',boxex => 0, labex => 0);
+	$dex->insert( SpinEdit => value => 0, onChange => sub { $m->{dexmod} = $_[0]->text; });
+	my $nat = PGK::labelBox($row1,'Natural','acn','v',boxex => 0, labex => 0);
+	$nat->insert( SpinEdit => value => 0, onChange => sub { $m->{nat} = $_[0]->text; });
+	my $deflect = PGK::labelBox($row1,'Deflect','ace','v',boxex => 0, labex => 0);
+	$deflect->insert( SpinEdit => value => 0, onChange => sub { $m->{deflect} = $_[0]->text; });
+	my $notff = PGK::labelBox($row1,'NotFF','acf','v',boxex => 0, labex => 0);
+	$notff->insert( SpinEdit => value => 0, onChange => sub { $m->{notff} = $_[0]->text; });
+	my $nottch = PGK::labelBox($row1,'NotTouch','act','v',boxex => 0, labex => 0);
+	$nottch->insert( SpinEdit => value => 0, onChange => sub { $m->{nottch} = $_[0]->text; });
+	my $misc = PGK::labelBox($row1,'Misc','acm','v',boxex => 0, labex => 0);
+	$misc->insert( SpinEdit => value => 0, onChange => sub { $m->{miscmod} = $_[0]->text; });
+	my $row2 = $target->insert( HBox => name => 'addmember2', pack => {fill => 'x'} );
+	my $name = PGK::labelBox($row2,'Name','name','v',boxex => 0, labex => 0);
+	$name->insert( InputLine => text => '', onChange => sub { $m->{name} = $_[0]->text; });
+	my $pname = PGK::labelBox($row2,'Player','name','v',boxex => 0, labex => 0);
+	$pname->insert( InputLine => text => 'GM', onChange => sub { $m->{player} = $_[0]->text; });
+	my $speed = PGK::labelBox($row2,'Speed','spd','v',boxex => 0, labex => 0);
+	$speed->insert( SpinEdit => value => 30, onChange => sub { $m->{speed} = $_[0]->text; });
+	my $maxhp = PGK::labelBox($row2,'HP','mhp','v',boxex => 0, labex => 0);
+	$maxhp->insert( SpinEdit => value => 1, onChange => sub { $m->{maxhp} = $_[0]->text; });
+	my $con = PGK::labelBox($row2,'Con Score','con','v',boxex => 0, labex => 0);
+	$con->insert( SpinEdit => value => 10, onChange => sub { $m->{conscore} = $_[0]->text; });
+	my $init = PGK::labelBox($row2,'Init Bonus','init','v',boxex => 0, labex => 0);
+	$init->insert( SpinEdit => value => 1, onChange => sub { $m->{init} = $_[0]->text; });
+	$row2->insert( SpeedButton => text => "Save",
+		onClick => sub {
+			($m->{name} eq '' && return);
+			push(@$members,$m);
+			$m->makeRow($target,$color);
+			$topper->destroy();
+			$row1->destroy();
+			$row2->destroy();
+			$caller->enabled(1);
+		}
+		);
+	return 0;
+}
+
+print ".";
+
 
 print " OK; ";
 1;

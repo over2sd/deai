@@ -11,3 +11,5 @@ Save party button
 Make Party pane load from array for refreshing purposes
 Clear opponents button
 Option: alternate dialog location for status askers
+Option: damage dialog positive/negative? Change colors for positive=healing vs positive=damage
+Move Save button in Add Member dialog to its own line, add lines for Mob values, make constructor create Mob if 'enemies'

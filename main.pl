@@ -5,7 +5,7 @@ use warnings;
 use utf8;
 
 # deai
-my $version = "0.021a";
+my $version = "0.025a";
 
 
 my $count = shift || 1;
@@ -57,6 +57,7 @@ foreach my $p (@$party) {
 	push(@partymembers,$m);
 }
 Sui::storeData('party',\@partymembers);
+Sui::storeData('enemies',[]);
 $output->destroy();
 # prepare tabs
 	#build a list of tabs (from module lister) that we'll be using
@@ -70,7 +71,9 @@ my $partypage = $pager->insert_to_page(0,VBox =>
 		backColor => ColorRow::stringToColor($color),
 		pack => { fill => 'both', },
 	);
-$partypage->insert( SpeedButton => text => "Add Party Member", pack => {fill => 'none', expand => 0} );
+$partypage->insert( SpeedButton => text => "Add Party Member", pack => {fill => 'none', expand => 0},
+	onClick => sub { PGUI::addMember($_[0],'party',$partypage,$color); },
+	);
 # TODO: add Player function
 foreach (@partymembers) {
 	$color = Common::getColors(($i++ % 2 ? 0 : 14),1);
@@ -93,7 +96,9 @@ closedir(DIR);
 foreach my $f (@files) {
 	$filebox->insert( Button => text => $f, onClick => sub { PGUI::openEncounter($opponentpage,$f); $filebox->destroy(); });
 }
-$opponentpage->insert( SpeedButton => text => "Add Opponent", pack => {fill => 'none', expand => 0} );
+$opponentpage->insert( SpeedButton => text => "Add Opponent", pack => {fill => 'none', expand => 0},
+	onClick => sub { $filebox->destroy(); PGUI::addMember($_[0],'enemies',$opponentpage,$color); },
+	);
 #	encounter managing tab
 $color = Common::getColors($i++,1);
 my $timepage = $pager->insert_to_page(2,VBox =>
