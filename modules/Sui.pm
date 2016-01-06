@@ -81,7 +81,11 @@ sub getOpts {
 ##		'003' => ['x',"Background color: ",'bgcol',"#CCCCCC"],
 		'004' => ['c',"Errors are fatal",'fatalerr'],
 		'005' => ['t',"Filename for party",'partyfn'],
-		'006' => ['c',"Tiebreaking: High initiative goes first",'highinitfirst'],
+		'006' => ['t','Campaign directory','campdir'],
+		'007' => ['t','Opponent subdirectory','oppdir'],
+		'008' => ['t','Campaign default','usecamp'],
+		'009' => ['c','Always use default','nocampask'],
+		'00a' => ['c',"Tiebreaking: High initiative goes first",'highinitfirst'],
 
 		'030' => ['l',"User Interface",'UI'],
 		'031' => ['c',"Delay skips if no action before next turn",'waittoskip'],

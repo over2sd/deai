@@ -138,7 +138,69 @@ sub incRound {
 
 package PGUI;
 sub populateMainWin {
-	my ($dbh,$gui,$something) = @_;
+	my ($dbh,$gui,$refresh,$campdir) = @_;
+	($refresh && $$gui{pager}->destroy());
+	my $win = $$gui{mainWin};
+	# load party
+	my $output = $win->insert(StatBox => name => "status");
+	my ($party,$error) = deaiXML::fromXML(sprintf("%s/%s",$campdir,FIO::config('Main','partyfn')),$output);
+	(defined $party or die $error); # TODO replace die with a dialog for entering a new party member.
+	my @partymembers = ();
+	foreach my $p (@$party) {
+		my $m = PC->new(%$p);
+		push(@partymembers,$m);
+	}
+	Sui::storeData('party',\@partymembers);
+	Sui::storeData('enemies',[]);
+	$output->destroy();
+	# prepare tabs
+	#build a list of tabs (from module lister) that we'll be using
+	my @tabs = qw( Party Opponents Time ); # TODO: generate dynamically
+	my $pager = $win->insert( Pager => name => 'Pages', pack => { fill => 'both', expand => 1}, );
+	$pager->build(@tabs);
+	my $i = 1;
+	my $color = Common::getColors(17,1);
+	#	party tab
+	my $partypage = $pager->insert_to_page(0,VBox =>
+		backColor => ColorRow::stringToColor($color),
+		pack => { fill => 'both', },
+	);
+	$partypage->insert( SpeedButton => text => "Add Party Member", pack => {fill => 'none', expand => 0},
+		onClick => sub { PGUI::addMember($_[0],'party',$partypage,$color); },
+		);
+	foreach (@partymembers) {
+		$color = Common::getColors(($i++ % 2 ? 0 : 14),1);
+		$_->makeRow($partypage,$color);
+	}
+	$color = Common::getColors($i++,1);
+	# 	encounter enitities tab
+	my $opponentpage = $pager->insert_to_page(1,VBox =>
+		backColor => ColorRow::stringToColor($color),
+		pack => { fill => 'both', },
+	);
+	my $filebox = $opponentpage->insert( VBox => name => 'filechoices' );
+	my $odir = sprintf("%s/%s",$campdir,(FIO::config('Main','oppdir') or "encounters"));
+	opendir(DIR,$odir) or die $!;
+	my @files = grep {
+		/\.xml$/
+		&& -f "$odir/$_"
+		} readdir(DIR);
+	closedir(DIR);
+	foreach my $f (@files) {
+		$filebox->insert( Button => text => $f, onClick => sub { PGUI::openEncounter($opponentpage,"$odir/$f"); $filebox->destroy(); });
+	}
+	$opponentpage->insert( SpeedButton => text => "Add Opponent", pack => {fill => 'none', expand => 0},
+		onClick => sub { $filebox->destroy(); PGUI::addMember($_[0],'enemies',$opponentpage,$color); },
+	);
+	#	encounter managing tab
+	$color = Common::getColors($i++,1);
+	my $timepage = $pager->insert_to_page(2,VBox =>
+			backColor => ColorRow::stringToColor($color),
+			pack => { fill => 'both', },
+		);
+	my $hb = $timepage->insert( HBox => name => 'timesplit', pack => {fill => 'both', expand => 1} );
+	my $initiative = initBox->new( round => 0, tbox => $hb->insert( VBox => name => 'ib', pack => {fill => 'both', expand => 1} ), sbox => $hb->insert( VBox => name => "status", pack => {fill => 'both', expand => 1}));
+	$$gui{pager} = $pager;
 }
 print ".";
 
@@ -146,6 +208,8 @@ sub buildMenus { #Replaces Gtk2::Menu, Gtk2::MenuBar, Gtk2::MenuItem
 	my $gui = shift;
 	my $menus = [
 		[ '~File' => [
+			['~New Campaign','Ctrl-N','^N',sub { $$gui{pager}->destroy(); PGUI::createCampaign($gui); }],
+			['~Load Campaign','Ctrl-L','^L',sub { $$gui{pager}->destroy(); config('Main','nocampask',0); PGUI::selectCamp($gui); } ],
 #			['~Save Party', 'Ctrl-S', '^S', sub { message('synch!') }],
 			['~Preferences', sub { return callOptBox($gui); }],
 			[],
@@ -188,9 +252,8 @@ print ".";
 sub openEncounter {
 	my ($box,$encfn) = @_;
 	my @olist;
-	my $odir = (FIO::config('Main','oppdir') or "./encounters");
 	my $tmp = $box->insert(StatBox => name => 'temp');
-	my ($group,$error) = deaiXML::fromXML("$odir/$encfn",$tmp);
+	my ($group,$error) = deaiXML::fromXML($encfn,$tmp);
 	(defined $group or print $error);
 	my @members = ();
 	foreach my $d (@$group) {
@@ -262,6 +325,56 @@ sub addMember {
 	return 0;
 }
 
+print ".";
+
+sub selectCamp {
+	my ($gui) = @_;
+	my $win = $$gui{mainWin};
+	my $cdir = (FIO::config('Main','campdir') or "./campaigns");
+	if (FIO::config('Main','nocampask')) {
+		my $campdir = (FIO::config('Main','usecamp') or "./campaigns/default");
+		populateMainWin(undef,$gui,0,$campdir);
+		return; # don't ask
+	}
+	opendir(DIR,$cdir) or die $!;
+	my $lister = $win->insert( VBox => name => "Campaigns", pack => {fill => 'both', expand => 1} );
+	$lister->insert( Label => text => "Choose your campaign");
+	my @dirs = grep {
+		!/^\.\.?$/
+		&& -d "$cdir/$_"
+	} readdir(DIR);
+	closedir(DIR);
+	foreach my $d (@dirs) {
+		$lister->insert( Button => text => $d, onClick => sub { $lister->destroy();
+			my $campdir = sprintf("%s/%s",$cdir,$d);
+			(FIO::config('Main','nocampask') && FIO::config('Main','usecamp',$campdir) &&  FIO::saveConf()); # store this campaign if we don't want to be asked again
+			populateMainWin(undef,$gui,0,$campdir);
+		});
+	}
+	$lister->insert( CheckBox => text => "Always use this campaign", onClick => sub { FIO::config('Main','nocampask',($_[0]->checked ? 1 : 0)); FIO::saveConf(); });
+}
+
+print ".";
+
+sub createCampaign {
+	my ($gui) = @_;
+	my $win = $$gui{mainWin};
+	my $cdir = (FIO::config('Main','campdir') or "./campaigns");
+	my $row = $win->insert( HBox => name => 'newcamp');
+	$row->insert( Label => text => "New campaign to be created in $cdir/");
+	my $dname = $row->insert( InputLine => text => "bestcampaignever" );
+	$row->insert( SpeedButton => text => "Create", onClick => sub { $_[0]->destroy(); reallyCreateCampaign($gui,$cdir,$dname->text)});
+}
+print ".";
+
+sub reallyCreateCampaign {
+	my ($gui,$cdir,$newdir) = @_;
+	my $odir = (FIO::config('Main','oppdir') or "encounters");
+	mkdir "$cdir/$newdir";
+	mkdir "$cdir/$newdir/$odir";
+	$win->insert( Label => text => "Your campaign has been created in $cdir/$newdir. You must add entities to play.");
+	populateMainWin(undef,$gui,0,"$cdir/$newdir");
+}
 print ".";
 
 
