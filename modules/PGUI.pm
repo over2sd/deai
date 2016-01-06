@@ -61,13 +61,13 @@ sub startEncounter {
 	defined $box or $box = $self->{box};
 	my $party = Sui::passData('party');
 	my $mobs = Sui::passData('enemies');
-	unless (defined $party) {
+	unless (defined $party and scalar @$party) {
 		my $warn = $box->insert(Label => text => "No party found.\nThe forces of darkness prevail.\nAdd party members to start an encounter.", autoHeight => 1);
 		my $button = $box->insert(SpeedButton => text => "Begin Encounter");
 		$button->onClick(sub { $warn->destroy(); $button->destroy(); $self->startEncounter($box);});
 		return;
 	}
-	unless (defined $mobs) {
+	unless (defined $mobs and scalar @$mobs) {
 		my $warn = $box->insert(Label => text => "No enemies found.\nParty unchallenged.\nAdd enemies to begin an encounter.", autoHeight => 1);
 		my $button = $box->insert(SpeedButton => text => "Begin Encounter");
 		$button->onClick(sub { $warn->destroy(); $button->destroy(); $self->startEncounter($box);});
@@ -352,6 +352,7 @@ sub selectCamp {
 		});
 	}
 	$lister->insert( CheckBox => text => "Always use this campaign", onClick => sub { FIO::config('Main','nocampask',($_[0]->checked ? 1 : 0)); FIO::saveConf(); });
+	$lister->insert( Button => text => "Create a New Campaign", onClick => sub { FIO::config('Main','nocampask',0); $lister->destroy(); PGUI::createCampaign($gui); });
 }
 
 print ".";
@@ -372,7 +373,23 @@ sub reallyCreateCampaign {
 	my $odir = (FIO::config('Main','oppdir') or "encounters");
 	mkdir "$cdir/$newdir";
 	mkdir "$cdir/$newdir/$odir";
-	$win->insert( Label => text => "Your campaign has been created in $cdir/$newdir. You must add entities to play.");
+	my $text = "<group>\n<comment>This file hasn't been edited. Use member tags to store information about members of this group.</comment>\n</group>\n";
+	unless (open(FILE,sprintf(">$cdir/$newdir/%s",FIO::config('Main','partyfn')))) {
+		$win->insert( Label => text => "Error opening file: $!" );
+		$win->insert( Button => text => "Exit", onClick => sub { $win->close() });
+		return;	
+	};
+	print FILE $text;
+	close(FILE);
+	unless (open(FILE,sprintf(">$cdir/$newdir/$odir/basic.xml"))) {
+		$win->insert( Label => text => "Error opening file: $!" );
+		$win->insert( Button => text => "Exit", onClick => sub { $win->close() });
+		return;	
+	};
+	print FILE $text;
+	close(FILE);
+	my $win = $$gui{mainWin};
+	PGK::sayBox($win,"Your campaign has been created\n in $cdir/$newdir.\n You must add entities to play.");
 	populateMainWin(undef,$gui,0,"$cdir/$newdir");
 }
 print ".";
