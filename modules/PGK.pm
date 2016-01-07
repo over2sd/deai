@@ -1325,7 +1325,7 @@ Returns a VBox or HBox named NAME.
 =cut
 sub labelBox {
 	my ($parent,$label,$name,$orientation,%args) = @_;
-	die "[E] Missing parameter to labelBox" unless (defined $parent and defined $label and defined $name);
+	die sprintf("[E] Missing parameter to labelBox from %s\n",Common::lineNo()) unless (defined $parent and defined $label and defined $name);
 	my $box;
 	unless (defined $orientation && $orientation =~ /[Hh]/) {
 		$box = $parent->insert( VBox => name => "$name", alignment => ta::Left, );

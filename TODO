@@ -9,6 +9,5 @@ Make Party pane load from array for refreshing purposes
 Clear opponents button -- needed? Can just reload campaign...
 Option: alternate dialog location for status askers
 Option: damage dialog positive/negative? Change colors for positive=healing vs positive=damage
-Add lines for Mob values, make constructor create Mob if 'enemies'
 Fix Save group filename dialog cancel behavior
 Decide if Option: Use misc AC mods is needed

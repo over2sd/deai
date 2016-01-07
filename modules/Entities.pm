@@ -115,7 +115,8 @@ sub makeRow {
 	my $row = $display->insert(HBox => name => $self->{name}, pack => { fill => 'x', expand => 0}, backColor => ColorRow::stringToColor($color or "#9cc"));
 	$row->insert( Widget => width => 7, height => 30, backColor => ColorRow::stringToColor($color or "#9cc") );
 	my $name = Common::shorten($self->{name},(FIO::config('UI','namelimit') or 20),4);
-	$row->insert( Label => text => "$name:", pack => {fill => 'x', expand => 1} );
+	if (exists $self->{race} and defined $self->{race} and $self->{race} ne '') { $name = "$name ($self->{race})"; }
+	$row->insert( Label => text => "$name:", pack => {fill => 'x', expand => 1}, hint => "Mini: $self->{mini}" );
 	$row->insert( Label => text => "Initiative: ");
 	$row->insert( InputLine => text => ($self->{priority} == 99 ? "" : $self->{priority}), onChange => sub { $self->{priority} = int($_[0]->text); });
 	$self->{curhp} = $self->{maxhp}; # for use in encounters
@@ -124,8 +125,9 @@ sub makeRow {
 sub makeStatusRow {
 	my ($self,$target,$dtarget,$color) = @_;
 	my $name = Common::shorten($self->{name},(FIO::config('UI','namelimit') or 20),4);
+	if (exists $self->{race} and defined $self->{race} and $self->{race} ne '') { $name = "$name ($self->{race})"; }
 	my $row = $target->insert( HBox => name => 'row', backColor => ColorRow::stringToColor($color or "#99f"), pack => {fill => 'x', expand => 0} );
-	$row->insert( Label => text => " $name: ");
+	$row->insert( Label => text => " $name: ", hint => "Mini: $self->{mini}");
 	my $hbutton = $row->insert( SpeedButton => text => sprintf(" %d/%d ",$self->{curhp},$self->{maxhp}),	);
 	$hbutton->onClick(sub {
 		my $asker = PGK::labelBox( $dtarget,sprintf(" %s: ",$self->{name}),'HPask','h', boxex => 0, labex => 0);

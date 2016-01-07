@@ -75,13 +75,20 @@ sub toXML {
 		$root->appendChild($e);
 		foreach my $tag (@pctags) {
 			my $text = sprintf("%s",($m->{$tag} or ""));
-			(defined $text) or next;
+			($text ne '') or next;
+			my $t = $out->createElement($tag);
+			$e->appendChild($t);
+			$t->appendChild(XML::LibXML::Text->new($text));
+		}
+		($grouptype eq "Mob" || next);
+		foreach my $tag (@mobtags) {
+			my $text = sprintf("%s",($m->{$tag} or ""));
+			($text ne '') or next;
 			my $t = $out->createElement($tag);
 			$e->appendChild($t);
 			$t->appendChild(XML::LibXML::Text->new($text));
 		}
 	}
-	
 	$|--;
 	print "Saving $fn...\n";
 	unless (open(FILE,">$fn")) {

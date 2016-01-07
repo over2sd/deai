@@ -168,7 +168,7 @@ sub populateMainWin {
 	);
 	my $savebutton;
 	$partypage->insert( SpeedButton => text => "Add Party Member", pack => {fill => 'none', expand => 0},
-		onClick => sub { $color = Common::getColors(($_[0]->{i}++ % 2 ? 14 : 12),1); PGUI::addMember($_[0],'party',$partypage,$color) or $savebutton->enabled(1); },
+		onClick => sub { $color = Common::getColors(($_[0]->{i}++ % 2 ? 14 : 12),1); PGUI::addMember($_[0],'party',$partypage,$win,$color) or $savebutton->enabled(1); },
 		);
 	$savebutton = $partypage->insert( SpeedButton => text => "Save Party", enabled => 0, onClick => sub { deaiXML::toXML($win,Sui::passData('party'),$partyfn); $_[0]->enabled(0); });
 	foreach (@partymembers) {
@@ -194,8 +194,7 @@ sub populateMainWin {
 	}
 	my $osaver;
 	$opponentpage->insert( SpeedButton => text => "Add Opponent", pack => {fill => 'none', expand => 0},
-		onClick => sub { $filebox->destroy(); $color = Common::getColors(($_[0]->{i}++ % 2 ? 5 : 12),1); PGUI::addMember($_[0],'enemies',$opponentpage,$color) or $osaver->enabled(1); },
-# increment color here
+		onClick => sub { $filebox->destroy(); $color = Common::getColors(($_[0]->{i}++ % 2 ? 5 : 12),1); PGUI::addMember($_[0],'enemies',$opponentpage,$win,$color) or $osaver->enabled(1); },
 	);
 	$osaver = $opponentpage->insert( SpeedButton => text => "Save Opponent Group", enabled => 0, onClick => sub { deaiXML::toXML($win,Sui::passData('enemies')); $_[0]->enabled(0); });
 	#	encounter managing tab
@@ -278,30 +277,69 @@ sub openEncounter {
 print ".";
 
 sub addMember {
-	my ($caller,$memtyp,$target,$color) = @_;
+	my ($caller,$memtyp,$target,$parent,$color) = @_;
 	return unless ($memtyp eq 'party' or $memtyp eq 'enemies');
 	$caller->enabled(0);
 	my $members = (Sui::passData($memtyp) or []);
-	my $topper = $target->insert( Label => text => "Enter member details:" );
+	my $dialog = Prima::Window->create( text => "Add a member to this group", owner => $parent, size => [640,480] ); # Make a window
+	my $rows = PGK::labelBox($dialog,"Details",'detlist','v',boxfill => 'both', boxex => 1);
+	my $buttons = $dialog->insert( HBox => name => 'buttons', pack => { fill => 'x', side => 'bottom',},);
+	my $topper = $rows->insert( Label => text => "Enter member details:" );
 	my $m = ($memtyp eq 'party' ? PC->new() : Mob->new());
-	my $rows = $target->insert( VBox => name => 'addmemberrows' );
 	my $row1 = $rows->insert( HBox => name => 'addmember1', pack => {fill => 'x'} );
-	my $name = PGK::labelBox($row1,'Name','name','v',boxex => 0, labex => 0);
-	$name->insert( InputLine => text => '', onChange => sub { $m->{name} = $_[0]->text; });
-	my $pname = PGK::labelBox($row1,'Player','name','v',boxex => 0, labex => 0);
-	$pname->insert( InputLine => text => 'GM', onChange => sub { $m->{player} = $_[0]->text; });
+	my $name = PGK::labelBox($row1,'Name','name','v',boxex => 1, labex => 1);
+	$m->{name} = '';
+	$name->insert( InputLine => text => $m->{name}, onLeave => sub { $m->{name} = $_[0]->text; }, pack => {fill => 'x'});
+	my $pname = PGK::labelBox($row1,'Player','pname','v',boxex => 1, labex => 1);
+	$m->{player} = ($memtyp eq "enemies" ? 'GM' : '');
+	$pname->insert( InputLine => text => $m->{player}, onLeave => sub { $m->{player} = $_[0]->text; }, pack => {fill => 'x'});
 	my $speed = PGK::labelBox($row1,'Speed','spd','v',boxex => 0, labex => 0);
 	$speed->insert( SpinEdit => value => 30, onChange => sub { $m->{speed} = $_[0]->text; });
-	my $maxhp = PGK::labelBox($row1,'HP','mhp','v',boxex => 0, labex => 0);
+	my $row1a = $rows->insert( HBox => name => 'addmember1,line 2', pack => {fill => 'x'} );
+	my $maxhp = PGK::labelBox($row1a,'HP','mhp','v',boxex => 0, labex => 0);
 	$maxhp->insert( SpinEdit => value => 1, onChange => sub { $m->{maxhp} = $_[0]->text; });
 	$m->{maxhp} = 1;
-	my $con = PGK::labelBox($row1,'Con Score','con','v',boxex => 0, labex => 0);
+	my $con = PGK::labelBox($row1a,'Con Score','con','v',boxex => 0, labex => 0);
 	$con->insert( SpinEdit => value => 10, onChange => sub { $m->{conscore} = $_[0]->text; });
-	my $init = PGK::labelBox($row1,'Init Bonus','init','v',boxex => 0, labex => 0);
+	my $init = PGK::labelBox($row1a,'Init Bonus','init','v',boxex => 0, labex => 0);
 	$init->insert( SpinEdit => value => 1, onChange => sub { $m->{init} = $_[0]->text; });
+	my $mini = PGK::labelBox($row1a,'Mini','mini','v',boxex => 0, labex => 0);
+	$mini->insert( InputLine => text => 'd6', onLeave => sub { $m->{mini} = $_[0]->text; });
 	if ($memtyp eq "enemies") {
-		my $row1m = $rows->insert( HBox => name => 'addmember1a' );
-		$row1m->insert( Label => text => "Monster stuff goes here");
+		my $row1m = $rows->insert( HBox => pack => { fill => 'x' } );
+		$row1m->insert( Label => text => "Coin: ");
+		$row1m->insert( SpinEdit => value => 0, onChange => sub { $m->{pp} = $_[0]->value; });
+		$row1m->insert( Label => text => 'p ');
+		$row1m->insert( SpinEdit => value => 0, onChange => sub { $m->{gp} = $_[0]->value; });
+		$row1m->insert( Label => text => 'g ');
+		$row1m->insert( SpinEdit => value => 0, onChange => sub { $m->{sp} = $_[0]->value; });
+		$row1m->insert( Label => text => 's ');
+		$row1m->insert( SpinEdit => value => 0, onChange => sub { $m->{cp} = $_[0]->value; });
+		$row1m->insert( Label => text => 'c ');
+		$row1m->insert( Label => text => "CR:");
+		$row1m->insert( InputLine => text => '1', onLeave => sub { $m->{cr} = $_[0]->text; });
+		my $row2m = $rows->insert( HBox => name => 'addmember1b' );
+		$row2m->insert( Label => text => "Loot: ");
+		my $loot0 = PGK::labelBox( $row2m,'Seen in battle','l0','v',boxex => 0, labex => 0);
+		$loot0->insert( InputLine => text => '', onLeave => sub { $m->{loot0} = $_[0]->text; });
+		my $loot5 = PGK::labelBox( $row2m,'DC5','l1','v',boxex => 0, labex => 0);
+		$loot5->insert( InputLine => text => '', onLeave => sub { $m->{loot5} = $_[0]->text; });
+		my $loot10 = PGK::labelBox( $row2m,'DC10','l2','v',boxex => 0, labex => 0);
+		$loot10->insert( InputLine => text => '', onLeave => sub { $m->{loot10} = $_[0]->text; });
+		my $loot15 = PGK::labelBox( $row2m,'DC15','l3','v',boxex => 0, labex => 0);
+		$loot15->insert( InputLine => text => '', onLeave => sub { $m->{loot15} = $_[0]->text; });
+		my $loot20 = PGK::labelBox( $row2m,'DC20','l4','v',boxex => 0, labex => 0);
+		$loot20->insert( InputLine => text => '', onLeave => sub { $m->{loot20} = $_[0]->text; });
+		my $loot25 = PGK::labelBox( $row2m,'DC25','l5','v',boxex => 0, labex => 0);
+		$loot25->insert( InputLine => text => '', onLeave => sub { $m->{loot25} = $_[0]->text; });
+#	my @mobtags = qw( dr race type );
+		my $row3m = $rows->insert( HBox => name => 'addmember1c' );
+		my $dr = PGK::labelBox( $row3m,'DR','dr','v',boxex => 0, labex => 0);
+		$dr->insert( InputLine => text => '', onLeave => sub { $m->{dr} = $_[0]->text; });
+		my $race = PGK::labelBox( $row3m,'Race','race','v',boxex => 0, labex => 0);
+		$race->insert( InputLine => text => 'unknown', onLeave => sub { $m->{race} = $_[0]->text; });
+		my $crtype = PGK::labelBox( $row3m,'Type','type','v',boxex => 0, labex => 0);
+		$crtype->insert( InputLine => text => 'normal', onLeave => sub { $m->{type} = $_[0]->text; });
 	}
 	my $row2 = $rows->insert( HBox => name => 'addmember2' );
 	$row2->insert( Label => text => "AC:");
@@ -326,16 +364,20 @@ sub addMember {
 	my $misc = PGK::labelBox($row3,'MiscAlways','acm','v',boxex => 0, labex => 0);
 	$misc->insert( SpinEdit => value => 0, onChange => sub { $m->{miscmod} = $_[0]->text; });
 # end misc AC mods
-	$rows->insert( SpeedButton => text => "Save",
-		onClick => sub {
-			($m->{name} eq '' && return);
+	my $spacer = $buttons->insert( Label => text => " ", pack => { fill => 'x', expand => 1, });
+	my $cancelB = $buttons->insert( Button => text => "Cancel", onClick => sub { $caller->enabled(1); $dialog->destroy(); });
+	my $saveB = $buttons->insert( Button => text => "Save" );
+	$saveB->onClick( sub {
+			return if $m->{name} eq '';
+			return if $m->{player} eq '';
+print ":$m->{name}:$m->{player}:";
 			push(@$members,$m);
 			$m->makeRow($target,$color);
-			$topper->destroy();
-			$rows->destroy();
+			$dialog->destroy();
 			$caller->enabled(1);
 		}
 		);
+	$dialog->focus(); # steal focus
 	return 0;
 }
 
