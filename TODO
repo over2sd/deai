@@ -1,15 +1,14 @@
 TODO:
 
 container that keeps track of each entity's health, etc.
-XML I/O processor
 Option: flat-footed until attack?
 Option: tHP allowed?
 Option: HP minimum 0, -10, or -conscore?
 Option: Damage asker horiz/vert?
-Save opponents button
-Save party button
 Make Party pane load from array for refreshing purposes
-Clear opponents button
+Clear opponents button -- needed? Can just reload campaign...
 Option: alternate dialog location for status askers
 Option: damage dialog positive/negative? Change colors for positive=healing vs positive=damage
-Move Save button in Add Member dialog to its own line, add lines for Mob values, make constructor create Mob if 'enemies'
+Add lines for Mob values, make constructor create Mob if 'enemies'
+Fix Save group filename dialog cancel behavior
+Decide if Option: Use misc AC mods is needed

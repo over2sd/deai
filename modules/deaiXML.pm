@@ -53,6 +53,47 @@ sub fromXML {
 }
 print ".";
 
+sub toXML {
+	my ($win,$list,$fn) = @_;
+	# unless fn defined, ask for it
+	my @members = @$list or die "toXML was not provided with a valid arrayref";
+	my $grouptype = ref($members[0]); # assuming you've sensibly sent me a homogenous group. You should not try to save PCs and Mobs in the same group, anyway.
+	unless (defined $fn) {
+		$fn = PGK::askbox($win,"Filename...",{one => 'tmp.xml'},"To what file should these be saved?") or undef;
+		($grouptype eq "Mob" && ($fn = sprintf("%s/%s",(FIO::config('Main','oppdir') or "encounters"),$fn)));
+		$fn = sprintf("%s/%s",FIO::config('Main','currentcamp'),$fn);
+	}
+	$|++;
+	require XML::LibXML;
+	my $out = XML::LibXML::Document->new();
+	my $root = $out->createElement('group');
+	$out->setDocumentElement($root);
+	my @pctags = qw( name player mini size armor shield dexmod nat deflect notff nottch miscmod speed conscore maxhp init );
+	my @mobtags = qw( pp gp sp cp sr cr loot0 loot5 loot10 loot15 loot20 loot25 dr race type );
+	foreach my $m (@members) {
+		my $e = $out->createElement('member');
+		$root->appendChild($e);
+		foreach my $tag (@pctags) {
+			my $text = sprintf("%s",($m->{$tag} or ""));
+			(defined $text) or next;
+			my $t = $out->createElement($tag);
+			$e->appendChild($t);
+			$t->appendChild(XML::LibXML::Text->new($text));
+		}
+	}
+	
+	$|--;
+	print "Saving $fn...\n";
+	unless (open(FILE,">$fn")) {
+		$win->insert( Label => text => "Error opening file: $!" );
+		$win->insert( Button => text => "Exit", onClick => sub { $win->close() });
+		return;	
+	};
+	print FILE $out->toString(2);
+	close(FILE);
+}
+print ".";
+
 sub pushMember {
 	my ($listref,$node,$termcolor,$thiscol) = @_;
 	my $basecol = ($termcolor ? Common::getColorsbyName("base") : "");

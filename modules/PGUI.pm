@@ -143,7 +143,8 @@ sub populateMainWin {
 	my $win = $$gui{mainWin};
 	# load party
 	my $output = $win->insert(StatBox => name => "status");
-	my ($party,$error) = deaiXML::fromXML(sprintf("%s/%s",$campdir,FIO::config('Main','partyfn')),$output);
+	my $partyfn = sprintf("%s/%s",$campdir,FIO::config('Main','partyfn'));
+	my ($party,$error) = deaiXML::fromXML($partyfn,$output);
 	(defined $party or die $error); # TODO replace die with a dialog for entering a new party member.
 	my @partymembers = ();
 	foreach my $p (@$party) {
@@ -165,9 +166,11 @@ sub populateMainWin {
 		backColor => ColorRow::stringToColor($color),
 		pack => { fill => 'both', },
 	);
+	my $savebutton;
 	$partypage->insert( SpeedButton => text => "Add Party Member", pack => {fill => 'none', expand => 0},
-		onClick => sub { PGUI::addMember($_[0],'party',$partypage,$color); },
+		onClick => sub { $color = Common::getColors(($_[0]->{i}++ % 2 ? 14 : 12),1); PGUI::addMember($_[0],'party',$partypage,$color) or $savebutton->enabled(1); },
 		);
+	$savebutton = $partypage->insert( SpeedButton => text => "Save Party", enabled => 0, onClick => sub { deaiXML::toXML($win,Sui::passData('party'),$partyfn); $_[0]->enabled(0); });
 	foreach (@partymembers) {
 		$color = Common::getColors(($i++ % 2 ? 0 : 14),1);
 		$_->makeRow($partypage,$color);
@@ -189,9 +192,12 @@ sub populateMainWin {
 	foreach my $f (@files) {
 		$filebox->insert( Button => text => $f, onClick => sub { PGUI::openEncounter($opponentpage,"$odir/$f"); $filebox->destroy(); });
 	}
+	my $osaver;
 	$opponentpage->insert( SpeedButton => text => "Add Opponent", pack => {fill => 'none', expand => 0},
-		onClick => sub { $filebox->destroy(); PGUI::addMember($_[0],'enemies',$opponentpage,$color); },
+		onClick => sub { $filebox->destroy(); $color = Common::getColors(($_[0]->{i}++ % 2 ? 5 : 12),1); PGUI::addMember($_[0],'enemies',$opponentpage,$color) or $osaver->enabled(1); },
+# increment color here
 	);
+	$osaver = $opponentpage->insert( SpeedButton => text => "Save Opponent Group", enabled => 0, onClick => sub { deaiXML::toXML($win,Sui::passData('enemies')); $_[0]->enabled(0); });
 	#	encounter managing tab
 	$color = Common::getColors($i++,1);
 	my $timepage = $pager->insert_to_page(2,VBox =>
@@ -277,48 +283,56 @@ sub addMember {
 	$caller->enabled(0);
 	my $members = (Sui::passData($memtyp) or []);
 	my $topper = $target->insert( Label => text => "Enter member details:" );
-	my $row1 = $target->insert( HBox => name => 'addmember1' );
-	my $m = PC->new();
-	$row1->insert( Label => text => "AC:");
-	my $size = PGK::labelBox($row1,'Size','acz','v',boxex => 0, labex => 0);
-	$size->insert( SpinEdit => value => 0, onChange => sub { $m->{size} = $_[0]->text; });
-	my $armor = PGK::labelBox($row1,'Armor','aca','v',boxex => 0, labex => 0);
-	$armor->insert( SpinEdit => value => 0, onChange => sub { $m->{armor} = $_[0]->text; });
-	my $shield = PGK::labelBox($row1,'Shield','acs','v',boxex => 0, labex => 0);
-	$shield->insert( SpinEdit => value => 0, onChange => sub { $m->{shield} = $_[0]->text; });
-	my $dex = PGK::labelBox($row1,'Dex mod','acd','v',boxex => 0, labex => 0);
-	$dex->insert( SpinEdit => value => 0, onChange => sub { $m->{dexmod} = $_[0]->text; });
-	my $nat = PGK::labelBox($row1,'Natural','acn','v',boxex => 0, labex => 0);
-	$nat->insert( SpinEdit => value => 0, onChange => sub { $m->{nat} = $_[0]->text; });
-	my $deflect = PGK::labelBox($row1,'Deflect','ace','v',boxex => 0, labex => 0);
-	$deflect->insert( SpinEdit => value => 0, onChange => sub { $m->{deflect} = $_[0]->text; });
-	my $notff = PGK::labelBox($row1,'NotFF','acf','v',boxex => 0, labex => 0);
-	$notff->insert( SpinEdit => value => 0, onChange => sub { $m->{notff} = $_[0]->text; });
-	my $nottch = PGK::labelBox($row1,'NotTouch','act','v',boxex => 0, labex => 0);
-	$nottch->insert( SpinEdit => value => 0, onChange => sub { $m->{nottch} = $_[0]->text; });
-	my $misc = PGK::labelBox($row1,'Misc','acm','v',boxex => 0, labex => 0);
-	$misc->insert( SpinEdit => value => 0, onChange => sub { $m->{miscmod} = $_[0]->text; });
-	my $row2 = $target->insert( HBox => name => 'addmember2', pack => {fill => 'x'} );
-	my $name = PGK::labelBox($row2,'Name','name','v',boxex => 0, labex => 0);
+	my $m = ($memtyp eq 'party' ? PC->new() : Mob->new());
+	my $rows = $target->insert( VBox => name => 'addmemberrows' );
+	my $row1 = $rows->insert( HBox => name => 'addmember1', pack => {fill => 'x'} );
+	my $name = PGK::labelBox($row1,'Name','name','v',boxex => 0, labex => 0);
 	$name->insert( InputLine => text => '', onChange => sub { $m->{name} = $_[0]->text; });
-	my $pname = PGK::labelBox($row2,'Player','name','v',boxex => 0, labex => 0);
+	my $pname = PGK::labelBox($row1,'Player','name','v',boxex => 0, labex => 0);
 	$pname->insert( InputLine => text => 'GM', onChange => sub { $m->{player} = $_[0]->text; });
-	my $speed = PGK::labelBox($row2,'Speed','spd','v',boxex => 0, labex => 0);
+	my $speed = PGK::labelBox($row1,'Speed','spd','v',boxex => 0, labex => 0);
 	$speed->insert( SpinEdit => value => 30, onChange => sub { $m->{speed} = $_[0]->text; });
-	my $maxhp = PGK::labelBox($row2,'HP','mhp','v',boxex => 0, labex => 0);
+	my $maxhp = PGK::labelBox($row1,'HP','mhp','v',boxex => 0, labex => 0);
 	$maxhp->insert( SpinEdit => value => 1, onChange => sub { $m->{maxhp} = $_[0]->text; });
-	my $con = PGK::labelBox($row2,'Con Score','con','v',boxex => 0, labex => 0);
+	$m->{maxhp} = 1;
+	my $con = PGK::labelBox($row1,'Con Score','con','v',boxex => 0, labex => 0);
 	$con->insert( SpinEdit => value => 10, onChange => sub { $m->{conscore} = $_[0]->text; });
-	my $init = PGK::labelBox($row2,'Init Bonus','init','v',boxex => 0, labex => 0);
+	my $init = PGK::labelBox($row1,'Init Bonus','init','v',boxex => 0, labex => 0);
 	$init->insert( SpinEdit => value => 1, onChange => sub { $m->{init} = $_[0]->text; });
-	$row2->insert( SpeedButton => text => "Save",
+	if ($memtyp eq "enemies") {
+		my $row1m = $rows->insert( HBox => name => 'addmember1a' );
+		$row1m->insert( Label => text => "Monster stuff goes here");
+	}
+	my $row2 = $rows->insert( HBox => name => 'addmember2' );
+	$row2->insert( Label => text => "AC:");
+	my $size = PGK::labelBox($row2,'Size','acz','v',boxex => 0, labex => 0);
+	$size->insert( SpinEdit => value => 0, onChange => sub { $m->{size} = $_[0]->text; });
+	my $deflect = PGK::labelBox($row2,'Deflect','ace','v',boxex => 0, labex => 0);
+	$deflect->insert( SpinEdit => value => 0, onChange => sub { $m->{deflect} = $_[0]->text; });
+	my $dex = PGK::labelBox($row2,'Dex mod','acd','v',boxex => 0, labex => 0);
+	$dex->insert( SpinEdit => value => 0, onChange => sub { $m->{dexmod} = $_[0]->text; });
+	my $armor = PGK::labelBox($row2,'Armor','aca','v',boxex => 0, labex => 0);
+	$armor->insert( SpinEdit => value => 0, onChange => sub { $m->{armor} = $_[0]->text; });
+	my $shield = PGK::labelBox($row2,'Shield','acs','v',boxex => 0, labex => 0);
+	$shield->insert( SpinEdit => value => 0, onChange => sub { $m->{shield} = $_[0]->text; });
+	my $nat = PGK::labelBox($row2,'Natural','acn','v',boxex => 0, labex => 0);
+	$nat->insert( SpinEdit => value => 0, onChange => sub { $m->{nat} = $_[0]->text; });
+# misc AC mods?
+	my $row3 = $rows->insert( HBox => name => 'addmember3' );
+	my $nottch = PGK::labelBox($row3,'NotTouch','act','v',boxex => 0, labex => 0);
+	$nottch->insert( SpinEdit => value => 0, onChange => sub { $m->{nottch} = $_[0]->text; });
+	my $notff = PGK::labelBox($row3,'NotFF','acf','v',boxex => 0, labex => 0);
+	$notff->insert( SpinEdit => value => 0, onChange => sub { $m->{notff} = $_[0]->text; });
+	my $misc = PGK::labelBox($row3,'MiscAlways','acm','v',boxex => 0, labex => 0);
+	$misc->insert( SpinEdit => value => 0, onChange => sub { $m->{miscmod} = $_[0]->text; });
+# end misc AC mods
+	$rows->insert( SpeedButton => text => "Save",
 		onClick => sub {
 			($m->{name} eq '' && return);
 			push(@$members,$m);
 			$m->makeRow($target,$color);
 			$topper->destroy();
-			$row1->destroy();
-			$row2->destroy();
+			$rows->destroy();
 			$caller->enabled(1);
 		}
 		);
@@ -333,6 +347,7 @@ sub selectCamp {
 	my $cdir = (FIO::config('Main','campdir') or "./campaigns");
 	if (FIO::config('Main','nocampask')) {
 		my $campdir = (FIO::config('Main','usecamp') or "./campaigns/default");
+		FIO::config('Main','currentcamp',$campdir); # no save, might not propegate to config file.
 		populateMainWin(undef,$gui,0,$campdir);
 		return; # don't ask
 	}
@@ -348,6 +363,7 @@ sub selectCamp {
 		$lister->insert( Button => text => $d, onClick => sub { $lister->destroy();
 			my $campdir = sprintf("%s/%s",$cdir,$d);
 			(FIO::config('Main','nocampask') && FIO::config('Main','usecamp',$campdir) &&  FIO::saveConf()); # store this campaign if we don't want to be asked again
+			FIO::config('Main','currentcamp',$campdir); # no save, might not propegate to config file.
 			populateMainWin(undef,$gui,0,$campdir);
 		});
 	}
