@@ -139,7 +139,7 @@ sub incRound {
 package PGUI;
 sub populateMainWin {
 	my ($dbh,$gui,$refresh,$campdir) = @_;
-	($refresh && $$gui{pager}->destroy());
+	($refresh && (defined $$gui{pager}) && $$gui{pager}->destroy());
 	my $win = $$gui{mainWin};
 	# load party
 	my $output = $win->insert(StatBox => name => "status");
@@ -393,7 +393,7 @@ sub selectCamp {
 		populateMainWin(undef,$gui,0,$campdir);
 		return; # don't ask
 	}
-	opendir(DIR,$cdir) or die $!;
+	opendir(DIR,$cdir) or die "Bad $cdir: $!";
 	my $lister = $win->insert( VBox => name => "Campaigns", pack => {fill => 'both', expand => 1} );
 	$lister->insert( Label => text => "Choose your campaign");
 	my @dirs = grep {
