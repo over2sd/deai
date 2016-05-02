@@ -189,8 +189,25 @@ sub populateMainWin {
 		&& -f "$odir/$_"
 		} readdir(DIR);
 	closedir(DIR);
-	foreach my $f (@files) {
-		$filebox->insert( Button => text => $f, onClick => sub { PGUI::openEncounter($opponentpage,"$odir/$f"); $filebox->destroy(); });
+	my $maxrows = (FIO::config('UI','filerows') or 10);
+	if (scalar @files < $maxrows) {
+		foreach my $f (@files) {
+			$filebox->insert( Button => text => $f, onClick => sub { PGUI::openEncounter($opponentpage,"$odir/$f"); $filebox->destroy(); }, pack => { fill => 'x', });
+		}
+	} else {
+		my $columncount = int(scalar @files / $maxrows);
+		my $currentcolumn = 0;
+		my @columns;
+		my $colbox = $filebox->insert( HBox => name => "column holder" );
+		foreach (0 .. $columncount) {
+			my $c = $colbox->insert(  VBox => name => "filechoices $_" );
+			push(@columns,$c);
+		}
+		my $tmpcount = 0;
+		foreach my $f (@files) {
+			$columns[($currentcolumn % scalar @columns)]->insert( Button => text => $f, onClick => sub { PGUI::openEncounter($opponentpage,"$odir/$f"); $filebox->destroy(); }, pack => { fill => 'x', });
+			$currentcolumn++;
+		}
 	}
 	my $osaver;
 	$opponentpage->insert( SpeedButton => text => "Add Opponent", pack => {fill => 'none', expand => 0},
@@ -370,7 +387,6 @@ sub addMember {
 	$saveB->onClick( sub {
 			return if $m->{name} eq '';
 			return if $m->{player} eq '';
-print ":$m->{name}:$m->{player}:";
 			push(@$members,$m);
 			$m->makeRow($target,$color);
 			$dialog->destroy();
@@ -388,8 +404,9 @@ sub selectCamp {
 	my $win = $$gui{mainWin};
 	my $cdir = (FIO::config('Main','campdir') or "./campaigns");
 	if (FIO::config('Main','nocampask')) {
-		my $campdir = (FIO::config('Main','usecamp') or "./campaigns/default");
+		my $campdir = sprintf("%s/%s",$cdir,(FIO::config('Main','usecamp') or "default"));
 		FIO::config('Main','currentcamp',$campdir); # no save, might not propegate to config file.
+		print "Using default $campdir...\n";
 		populateMainWin(undef,$gui,0,$campdir);
 		return; # don't ask
 	}

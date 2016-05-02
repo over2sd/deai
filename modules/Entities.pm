@@ -49,6 +49,7 @@ sub new {
 		init => ($profile{init} or 0),
 		priority => 99,
 		nextact => 1,
+		present => ($profile{active} or 1),
 	};
 	bless $self, $class;
 	return $self;
@@ -85,13 +86,26 @@ sub decrease {
 
 sub activate {
 	my ($self,$display) = @_;
-	# insert display row with buttons into display
+	# check if entity is active (present), and skip if not
 	my $row = $display->insert( HBox => name => $self->get('name'), pack => {fill => 'x'});
+	unless ($self->get('present')) {
+		$row->insert( Label => text => $self->get('name') . " is not fighting.");
+		$display->enqueue($self);
+print "Skipping " . $self->get('name') . "\n";
+		$display->advance();
+		$::application->yield();
+		PGK::Pwait(3) if FIO::config('UI','preventdoubleclick');
+		$row->destroy();
+		return;
+	}
+	# insert display row with buttons into display
 	$row->insert( Label => text => $self->get('name'));
 	my $act = $row->insert( SpeedButton => text => "Act");
 	$act->onClick(sub {
 		$display->enqueue($self);
 		$row->destroy();
+		$::application->yield();
+		sleep 1 if FIO::config('UI','preventdoubleclick');
 		$display->advance();
 	});
 	my $wait = $row->insert( SpeedButton => text => "Delay");
@@ -119,6 +133,7 @@ sub makeRow {
 	$row->insert( Label => text => "$name:", pack => {fill => 'x', expand => 1}, hint => "Mini: $self->{mini}" );
 	$row->insert( Label => text => "Initiative: ");
 	$row->insert( InputLine => text => ($self->{priority} == 99 ? "" : $self->{priority}), onChange => sub { $self->{priority} = int($_[0]->text); });
+	$row->insert( CheckBox => text => '', checked => $self->{present}, onChange => sub { $self->set('present',$_[0]->checked); }, hint => "Check if $self->{name} is active and present for combat", );
 	$self->{curhp} = $self->{maxhp}; # for use in encounters
 }
 
@@ -145,6 +160,8 @@ sub makeStatusRow {
 		my $killer = $asker->insert( SpeedButton => text => "Apply", onClick => sub { $self->{curhp} = $newval->value; $hbutton->text(sprintf(" %d/%d ",$self->{curhp},$self->{maxhp})); $asker->destroy(); });
 	});
 	$row->insert( Label => text => "  AC: " . $self->ac('full') . " ");
+
+	$row->insert( Button => checkable => 1, text => "A", checked => $self->{present}, onClick => sub { $self->{present} = $_[0]->checked; print "Now " . ($self->{present} ? "active" : "inactive") . "\n"; }, pack => { fill => 'none', expand => 0} );
 	return $row;
 }
 
@@ -225,6 +242,8 @@ sub activate {
 	$display->incRound();
 	# add new round marker to end of parent's queue
 	$display->enqueue($self);
+	$::application->yield();
+	sleep 1 if FIO::config('UI','preventdoubleclick');
 	$display->advance();
 }
 

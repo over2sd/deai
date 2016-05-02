@@ -1,13 +1,15 @@
 TODO:
 
-container that keeps track of each entity's health, etc.
 Option: flat-footed until attack?
 Option: tHP allowed?
 Option: HP minimum 0, -10, or -conscore?
 Option: Damage asker horiz/vert?
 Make Party pane load from array for refreshing purposes
-Clear opponents button -- needed? Can just reload campaign...
+Clear opponents button -- needed? Can just reload campaign... loses current HP for party...
 Option: alternate dialog location for status askers
 Option: damage dialog positive/negative? Change colors for positive=healing vs positive=damage
 Fix Save group filename dialog cancel behavior
 Decide if Option: Use misc AC mods is needed
+Button: End encounter
+Common Buff fields/buttons for rage,enlarge, etc.
+AC becomes button so it can be altered by spells, etc.
